@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfa0fddec211a434fb18b322fd3e2266, type: 3}
+  m_Name: ConverterTest
+  m_EditorClassIdentifier: 
+  _excelChapters:
+  - _excelFile: {fileID: 102900000, guid: d896a51c5e209c14f9af354215dbef99, type: 3}
+    _textFiles:
+    - {fileID: 4900000, guid: 2426148cedb0a78469e4e48c3d9ed79d, type: 3}
+  novelMode: 0
+  textMatrixXY: {x: 0, y: 0}
