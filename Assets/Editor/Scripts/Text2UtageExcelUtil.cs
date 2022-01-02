@@ -140,6 +140,16 @@ namespace Text2Utage
 				pageCtrlCell.SetCellValue("");
 				return;
 			}
+			// 入力待ちの場合、1つ前のPageCtrlをInputにする
+			if (targetRow.IsClickWaitTag(line))
+			{
+				if (rowCount == 1) return;
+
+				var beforeRow = targetSheet.GetRow(rowCount - 1);
+				var pageCtrlCell = beforeRow.CreateCell((int)Util.ColumnEnum.PageCtrl);
+				pageCtrlCell.SetCellValue("Input");
+				return;
+			}
 
 			//ここまで来たらコマンド行とみなし、整形
 			var commandText = line.Trim('[', ']', '@').Replace(" =", "=").Replace("= ", "=").Replace("  ", " ");
@@ -162,7 +172,7 @@ namespace Text2Utage
 
 		private string[] GetArgContentArray(string[] splittedArgText)
 		{
-			string[] args = new string[7];
+			string[] args = new string[8];
 			if (splittedArgText == null)
 			{
 				return args;
@@ -195,6 +205,10 @@ namespace Text2Utage
 						if (splittedArgText[i].ToLower().Contains(Util.ColumnEnum.WaitType.ToString().ToLower()))
 						{
 							args[6] = splittedArgText[i].Replace(Util.ColumnEnum.WaitType.ToString() + "=", "");
+						}
+						if (splittedArgText[i].ToLower().Contains(Util.ColumnEnum.Text.ToString().ToLower()))
+						{
+							args[7] = splittedArgText[i].Replace(Util.ColumnEnum.Text.ToString() + "=", "");
 						}
 					}
 				}
@@ -235,6 +249,11 @@ namespace Text2Utage
 		public bool IsNewLineTag(string line)
 		{
 			return (line.IndexOf("[p]") > -1 || line.IndexOf("@p") > -1);
+		}
+
+		public bool IsClickWaitTag(string line)
+		{
+			return (line.IndexOf("[l]]") > -1 || line.IndexOf("@l") > -1);
 		}
 
 		public void SetText(string text, bool novelMode = false)
