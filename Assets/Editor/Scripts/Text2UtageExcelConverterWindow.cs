@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using Text2Utage;
 using UnityEditor;
 using UnityEngine;
 
@@ -43,6 +44,7 @@ namespace Utage
 		{
 
 			Text2UtageExcelConverter project = EditorGUILayout.ObjectField("", Converter, typeof(Text2UtageExcelConverter), false) as Text2UtageExcelConverter;
+
 			if (project != Converter)
 			{
 				Converter = project;
@@ -61,19 +63,19 @@ namespace Utage
 			}
 		}
 
-		private void Convert()
+		public static void ConvertFromFile(Text2UtageExcelConverter target)
 		{
 			float doneExcelFileCount = 0f;
-			float convertCount = (float)Converter.TextCount;
-			foreach (var chapter in converter.ExcelChapters)
+			float convertCount = (float)target.TextCount;
+			foreach (var chapter in target.ExcelChapters)
 			{
 				foreach (var text in chapter.TextFiles)
 				{
-					if (!converter.IsUpdate(text))
+					if (!target.IsUpdate(text))
 					{
 						continue;
 					}
-					Text2Excel(chapter.ExcelFile, text);
+					Text2Excel(chapter.ExcelFile, text, target);
 					doneExcelFileCount++;
 					EditorUtility.DisplayProgressBar("Convert", $"progress {doneExcelFileCount} / {convertCount}", doneExcelFileCount / convertCount);
 				}
@@ -81,17 +83,23 @@ namespace Utage
 
 			EditorUtility.ClearProgressBar();
 
-			if (converter.CheckUpdateFile)
+			if (target.CheckUpdateFile)
 			{
-				EditorUtility.SetDirty(converter);
+				EditorUtility.SetDirty(target);
 			}
-			else
+
+			if (doneExcelFileCount == 0f)
 			{
 				Debug.Log("更新されたファイルが存在しないと判定されました");
 			}
 		}
 
-		private void Text2Excel(UnityEngine.Object excelFile, UnityEngine.Object textFile)
+		private void Convert()
+		{
+			ConvertFromFile(converter);
+		}
+
+		private static void Text2Excel(UnityEngine.Object excelFile, UnityEngine.Object textFile, Text2UtageExcelConverter target)
 		{
 			var excelPath = AssetDatabase.GetAssetPath(excelFile);
 			var textPath = AssetDatabase.GetAssetPath(textFile);
@@ -116,25 +124,35 @@ namespace Utage
 
 			targetSheet = writeBook.CreateSheet(Path.GetFileNameWithoutExtension(textPath));
 
-			var sheet = new Text2Utage.Sheet(targetSheet, Converter.NovelMode);
+
+			var sheet = new Text2Utage.Sheet(targetSheet, target.NovelMode);
 
 			using (System.IO.StreamReader sr = new System.IO.StreamReader(textPath))
 			{
 				var textData = sr.ReadToEnd();
-				string[] splitted = textData.Replace("\r", "").Split('\n');
 
-				for (int i = 0; i < splitted.Length; i++)
+				string[] temp = textData.Replace("\r", "").Split('\n');
+				List<string> splitted = new List<string>();
+				foreach (var line in temp)
+				{
+					if (string.IsNullOrEmpty(line) || line[0] == ';' || line[0] == '/')
+					{
+						continue;
+					}
+					splitted.Add(line);
+				}
+
+				for (int i = 0; i < splitted.Count; i++)
 				{
 					if (splitted[i] == "") continue;
 					//ノベルモードで[p]が存在しない場合、自動でいれる
-					if (converter.NovelMode && !IsNewLineTag(splitted.Skip(i)))
+					if (target.NovelMode && !IsNewLineTag(splitted.Skip(i)) && !Util.isCommand(splitted[i]))
 					{
 						int rowSum = 0;
-						for (int search = i; search < splitted.Length - 1; search++)
+						for (int search = i; search < splitted.Count - 1; search++)
 						{
-
-							var nowRow = Mathf.FloorToInt(splitted[search].Length / converter.TextMatrixXY.x) + 1;
-							if (nowRow > converter.TextMatrixXY.y)
+							var nowRow = Mathf.FloorToInt(splitted[search].Length / target.TextMatrixXY.x) + 1;
+							if (nowRow > target.TextMatrixXY.y)
 							{
 								splitted[search] = splitted[search] + "[p]";
 								break;
@@ -142,10 +160,10 @@ namespace Utage
 
 							rowSum += nowRow;
 
-							var nextRow = Mathf.FloorToInt(splitted[search + 1].Length / converter.TextMatrixXY.x) + 1;
+							var nextRow = Mathf.FloorToInt(splitted[search + 1].Length / target.TextMatrixXY.x) + 1;
 
 							//Debug.Log(splitted[search] + splitted[search].Length + "Row" + rowSum);
-							if ((rowSum + nextRow) > converter.TextMatrixXY.y)
+							if ((rowSum + nextRow) > target.TextMatrixXY.y)
 							{
 								splitted[search] = splitted[search] + "[p]";
 								//                               Debug.Log ("index : "+ search + " " +splitted[search]);
@@ -155,13 +173,14 @@ namespace Utage
 					}
 
 					var line = splitted[i];
+					var test = line;
 					sheet.SetLine(line);
 				}
 
 			}
-			if (converter.CheckUpdateFile)
+			if (target.CheckUpdateFile)
 			{
-				converter.AddConverted(textFile);
+				target.AddConverted(textFile);
 			}
 
 			// Excelを保存
@@ -172,11 +191,11 @@ namespace Utage
 			}
 		}
 
-		private bool IsNewLineTag(string line)
+		private static bool IsNewLineTag(string line)
 		{
 			return (line.IndexOf("[p]") > -1 || line.IndexOf("@p") > -1);
 		}
-		private bool IsNewLineTag(IEnumerable<string> lines)
+		private static bool IsNewLineTag(IEnumerable<string> lines)
 		{
 			return lines.Any(l => IsNewLineTag(l));
 		}

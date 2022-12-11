@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NPOI.SS.UserModel;
 using UnityEngine;
+using System.Linq;
+
 
 namespace Text2Utage
 {
@@ -40,8 +42,9 @@ namespace Text2Utage
 
 		public static bool isCommand(string str)
 		{
-			return str[0] == '@' || str[0] == '[';
+			return str[0] == '@' || str[0] == '[' || str[0] == '*';
 		}
+
 	}
 
 	public class Sheet
@@ -77,11 +80,7 @@ namespace Text2Utage
 
 		private bool IsArgTextInCommand(string[] commands)
 		{
-			for (int i = 0; i < commands.Length; i++)
-			{
-				return commands[i].ToLower().Contains("arg");
-			}
-			return false;
+			return commands.Any(c => c.ToLower().Contains("arg"));
 		}
 
 		public void SetLine(string line)
@@ -107,7 +106,7 @@ namespace Text2Utage
 				return;
 			}
 
-			//コマンドではない
+			//コマンドでもラベルでもない
 			if (!Util.isCommand(line))
 			{
 				//キャラクターコマンドの場合
@@ -122,6 +121,8 @@ namespace Text2Utage
 
 					targetRow.SetCommand("", args);
 					isPreviousCharactorCommand = true;
+
+
 					return;
 				}
 

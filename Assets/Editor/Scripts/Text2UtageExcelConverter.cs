@@ -71,6 +71,11 @@ namespace Utage
 		//		[HideInInspector]
 		public List<ConvertFile> converted = new List<ConvertFile>();
 
+		public void Convert()
+		{
+			Text2UtageExcelConverterWindow.ConvertFromFile(this);
+		}
+
 		public void AddConverted(UnityEngine.Object textFile)
 		{
 			var convertedFlie = converted.Find(c => c.TextFile == textFile);
